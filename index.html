@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casio SX-300 Calculator</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        
+        .calculator {
+            background-color: #333;
+            width: 200px;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        
+        .brand {
+            color: silver;
+            font-size: 14px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .power-text {
+            font-size: 10px;
+            color: silver;
+        }
+        
+        .screen {
+            background-color: #c0c8d0;
+            height: 60px;
+            margin: 10px 0;
+            padding: 5px;
+            text-align: right;
+            font-family: 'Digital', monospace;
+            position: relative;
+            overflow: hidden; 
+        }
+        
+        .main-display {
+            font-size: 24px;
+            margin-top: 20px;
+            white-space: nowrap; 
+            overflow: hidden;
+            text-overflow: clip;
+            padding-right: 5px;
+        }
+        
+        .model {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            font-size: 10px;
+            color: #666;
+        }
+        
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+        }
+        
+        button {
+            padding: 10px 5px;
+            border: none;
+            border-radius: 3px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #444;
+            color: white;
+        }
+        
+        .num-btn {
+            background-color: #555;
+        }
+        
+        .op-btn {
+            background-color: #444;
+        }
+        
+        .clear-btn {
+            background-color: #d63031;
+        }
+        
+        .equals-btn {
+            background-color: #444;
+        }
+        
+        .memory-btn {
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="brand">
+            <span>CASIO</span>
+            <span class="power-text">TWO WAY POWER</span>
+        </div>
+        <div class="screen">
+            <div class="main-display" id="display">0</div>
+            <div class="model">SX-300</div>
+        </div>
+        <div class="buttons">
+            <button class="memory-btn" onclick="memoryOperation('MC')">MC</button>
+            <button class="memory-btn" onclick="memoryOperation('MR')">MR</button>
+            <button class="memory-btn" onclick="memoryOperation('M-')">M-</button>
+            <button class="memory-btn" onclick="memoryOperation('M+')">M+</button>
+            <button class="op-btn" onclick="handleOperator('/')">÷</button>
+            
+            <button class="num-btn" onclick="appendNumber('7')">7</button>
+            <button class="num-btn" onclick="appendNumber('8')">8</button>
+            <button class="num-btn" onclick="appendNumber('9')">9</button>
+            <button class="op-btn" onclick="handleOperator('*')">×</button>
+            <button class="memory-btn" onclick="calculate('sqrt')">√</button>
+            
+            <button class="num-btn" onclick="appendNumber('4')">4</button>
+            <button class="num-btn" onclick="appendNumber('5')">5</button>
+            <button class="num-btn" onclick="appendNumber('6')">6</button>
+            <button class="op-btn" onclick="handleOperator('-')">−</button>
+            <button class="op-btn" onclick="calculate('percent')">%</button>
+            
+            <button class="num-btn" onclick="appendNumber('1')">1</button>
+            <button class="num-btn" onclick="appendNumber('2')">2</button>
+            <button class="num-btn" onclick="appendNumber('3')">3</button>
+            <button class="op-btn" onclick="handleOperator('+')">+</button>
+            <button class="equals-btn" onclick="calculate()">=</button>
+            
+            <button class="num-btn" onclick="appendNumber('0')">0</button>
+            <button class="num-btn" onclick="appendNumber('.')">.</button>
+            <button class="clear-btn" onclick="clearCalculator()">C</button>
+            <button class="clear-btn" onclick="clearAll()">AC</button>
+            <button class="op-btn" onclick="toggleSign()">±</button>
+        </div>
+    </div>
+
+    <script>
+        let display = document.getElementById('display');
+        let currentNumber = '0';
+        let previousNumber = '';
+        let operation = null;
+        let memory = 0;
+        let newNumber = true;
+        
+        const MAX_DISPLAY_LENGTH = 12; 
+        
+        function formatNumber(num) {
+           
+            let str = Number(num).toString();
+            
+         
+            if (str.includes('e')) {
+                const parts = str.split('e');
+                const base = parseFloat(parts[0]);
+                const exponent = parseInt(parts[1]);
+                
+                if (exponent > MAX_DISPLAY_LENGTH) {
+                    return 'E'; 
+                }
+            
+    
+                str = Number(num).toFixed(Math.max(0, MAX_DISPLAY_LENGTH - exponent - 2));
+            }
+            
+ 
+            if (str.includes('.')) {
+                const parts = str.split('.');
+                if (parts[0].length > MAX_DISPLAY_LENGTH) {
+                    return 'E'; 
+                }
+                const remainingLength = MAX_DISPLAY_LENGTH - parts[0].length - 1;
+                if (remainingLength > 0) {
+                    str = `${parts[0]}.${parts[1].substring(0, remainingLength)}`;
+                } else {
+                    str = parts[0];
+                }
+            }
+            
+
+            if (str.length > MAX_DISPLAY_LENGTH) {
+                if (Math.abs(Number(num)) > Math.pow(10, MAX_DISPLAY_LENGTH)) {
+                    return 'E';
+                }
+
+                str = Number(num).toPrecision(MAX_DISPLAY_LENGTH);
+            }
+            
+            return str;
+        }
+        
+        function updateDisplay() {
+            display.textContent = formatNumber(currentNumber);
+        }
+        
+        function appendNumber(num) {
+            if (newNumber) {
+                currentNumber = '';
+                newNumber = false;
+            }
+            if (num === '.' && currentNumber.includes('.')) return;
+            if (currentNumber === '0' && num !== '.') {
+                currentNumber = num;
+            } else {
+                if (currentNumber.length >= MAX_DISPLAY_LENGTH) return;
+                currentNumber += num;
+            }
+            updateDisplay();
+        }
+        
+        function handleOperator(op) {
+            if (operation !== null) calculate();
+            previousNumber = currentNumber;
+            operation = op;
+            newNumber = true;
+        }
+        
+        function calculate(special = null) {
+            let result;
+            const prev = parseFloat(previousNumber);
+            const current = parseFloat(currentNumber);
+            
+            try {
+                if (special === 'sqrt') {
+                    if (current < 0) throw new Error('Invalid input');
+                    result = Math.sqrt(current);
+                } else if (special === 'percent') {
+                    result = current / 100;
+                } else if (operation) {
+                    switch(operation) {
+                        case '+': result = prev + current; break;
+                        case '-': result = prev - current; break;
+                        case '*': result = prev * current; break;
+                        case '/': 
+                            if (current === 0) throw new Error('Division by zero');
+                            result = prev / current; 
+                            break;
+                    }
+                    operation = null;
+                } else {
+                    return;
+                }
+                
+                currentNumber = result.toString();
+                if (currentNumber === 'Infinity' || currentNumber === '-Infinity' || isNaN(result)) {
+                    throw new Error('Error');
+                }
+            } catch (error) {
+                currentNumber = 'E';
+            }
+            
+            newNumber = true;
+            updateDisplay();
+        }
+        
+        function clearCalculator() {
+            currentNumber = '0';
+            newNumber = true;
+            updateDisplay();
+        }
+        
+        function clearAll() {
+            currentNumber = '0';
+            previousNumber = '';
+            operation = null;
+            newNumber = true;
+            updateDisplay();
+        }
+        
+        function toggleSign() {
+            if (currentNumber !== '0') {
+                currentNumber = (parseFloat(currentNumber) * -1).toString();
+                updateDisplay();
+            }
+        }
+        
+        function memoryOperation(op) {
+            const current = parseFloat(currentNumber);
+            switch(op) {
+                case 'MC':
+                    memory = 0;
+                    break;
+                case 'MR':
+                    currentNumber = memory.toString();
+                    newNumber = true;
+                    break;
+                case 'M+':
+                    memory += current;
+                    newNumber = true;
+                    break;
+                case 'M-':
+                    memory -= current;
+                    newNumber = true;
+                    break;
+            }
+            updateDisplay();
+        }
+    </script>
+</body>
+</html>
